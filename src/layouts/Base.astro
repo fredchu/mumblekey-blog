@@ -17,6 +17,8 @@ interface Props {
   jsonLd?: object[];
   /** 本頁的純 Markdown 版本路徑（agent 用） */
   mdPath?: string;
+  /** OG 圖路徑；未給用該語言預設圖 */
+  ogImage?: string;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   ogType = 'website',
   jsonLd = [],
   mdPath,
+  ogImage = `/og/default/${lang}.png`,
 } = Astro.props;
 
 const pageTitle = title ? `${title} — ${SITE_TITLE[lang]}` : SITE_TITLE[lang];
@@ -61,7 +64,11 @@ const switchPath = pathByLang[otherLang(lang)];
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={SITE_TITLE[lang]} />
     <meta property="og:locale" content={OG_LOCALE[lang]} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={absoluteUrl(ogImage)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={absoluteUrl(ogImage)} />
     {jsonLd.map((ld) => (
       <script type="application/ld+json" set:html={JSON.stringify(ld)} />
     ))}

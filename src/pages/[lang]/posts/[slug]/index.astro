@@ -21,6 +21,14 @@ const slug = slugFromId(post.id);
 const { Content } = await render(post);
 
 const pathByLang = await pairPaths('blog', slug, 'posts');
+const sameLang = await publishedEntries('blog', lang);
+const idx = sameLang.findIndex((p) => p.id === post.id);
+const newer = idx > 0 ? sameLang[idx - 1] : undefined;
+const older = idx >= 0 && idx < sameLang.length - 1 ? sameLang[idx + 1] : undefined;
+const related = sameLang
+  .filter((p) => p.id !== post.id && p.data.tags.some((tag) => post.data.tags.includes(tag)))
+  .slice(0, 2);
+const hasPair = Boolean(pathByLang.zh && pathByLang.en);
 const mdPath = `/${lang}/posts/${slug}.md`;
 const term = post.data.discussionTerm ?? slug;
 const showDisclaimer = post.data.tags.includes('trading');
@@ -43,6 +51,7 @@ const jsonLd = blogPostingLd({
   ogType="article"
   jsonLd={[jsonLd]}
   mdPath={mdPath}
+  ogImage={`/og/posts/${post.id}.png`}
 >
   <div class="container">
     <article class="prose">
@@ -64,8 +73,39 @@ const jsonLd = blogPostingLd({
         {pathByLang[otherLang(lang)] && (
           <a href={pathByLang[otherLang(lang)]}>{t(lang, 'post.pair')}</a>
         )}
+        {hasPair && <a href={`/${lang}/posts/${slug}/bilingual/`}>{t(lang, 'post.bilingual')}</a>}
         <a href={mdPath}>{t(lang, 'post.markdown')}</a>
       </footer>
+      {(newer || older) && (
+        <nav class="post-nav">
+          {older ? (
+            <a href={`/${lang}/posts/${slugFromId(older.id)}/`}>
+              <small>← {t(lang, 'post.older')}</small>
+              <span>{older.data.title}</span>
+            </a>
+          ) : (
+            <span></span>
+          )}
+          {newer && (
+            <a href={`/${lang}/posts/${slugFromId(newer.id)}/`} class="next">
+              <small>{t(lang, 'post.newer')} →</small>
+              <span>{newer.data.title}</span>
+            </a>
+          )}
+        </nav>
+      )}
+      {related.length > 0 && (
+        <aside class="related">
+          <h2>{t(lang, 'post.related')}</h2>
+          <ul>
+            {related.map((p) => (
+              <li>
+                <a href={`/${lang}/posts/${slugFromId(p.id)}/`}>{p.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
       <Giscus lang={lang} term={term} />
     </article>
   </div>

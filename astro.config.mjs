@@ -7,6 +7,7 @@ import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://blog.mumblekey.com',
+  prefetch: { prefetchAll: true },
   integrations: [
     expressiveCode({
       themes: ['github-dark', 'github-light'],

@@ -51,10 +51,34 @@ const fallbackSwitch = `/${otherLang(lang)}/`;
 </style>
 
 <script>
+  function syncGiscusTheme(theme: string) {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    iframe?.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme } } },
+      'https://giscus.app',
+    );
+  }
+
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const root = document.documentElement;
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     root.dataset.theme = next;
     localStorage.setItem('theme', next);
+    syncGiscusTheme(next);
   });
+
+  // giscus 預設跟 OS；若用戶存過偏好，iframe 載入後補同步一次
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (document.querySelector('iframe.giscus-frame')) {
+        syncGiscusTheme(saved);
+        clearInterval(timer);
+      } else if (tries > 20) {
+        clearInterval(timer);
+      }
+    }, 500);
+  }
 </script>

@@ -1,0 +1,66 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../../layouts/Base.astro';
+import { langFromId, slugFromId, t, type Lang } from '../../../../lib/i18n';
+import { publishedEntries } from '../../../../lib/content';
+
+// 只為「兩語言都存在」的成對文章產生對照頁
+export async function getStaticPaths() {
+  const posts = await publishedEntries('blog');
+  const bySlug = new Map<string, typeof posts>();
+  for (const post of posts) {
+    const slug = slugFromId(post.id);
+    bySlug.set(slug, [...(bySlug.get(slug) ?? []), post]);
+  }
+  const paths = [];
+  for (const [slug, pair] of bySlug) {
+    if (pair.length !== 2) continue;
+    for (const lang of ['zh', 'en'] as const) {
+      paths.push({ params: { lang, slug }, props: { pair } });
+    }
+  }
+  return paths;
+}
+
+const { pair } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const slug = Astro.params.slug as string;
+
+const zhPost = pair.find((p) => langFromId(p.id) === 'zh')!;
+const enPost = pair.find((p) => langFromId(p.id) === 'en')!;
+const { Content: ZhContent } = await render(zhPost);
+const { Content: EnContent } = await render(enPost);
+const main = lang === 'zh' ? zhPost : enPost;
+
+// 對照頁自成一對，canonical 指向各語言自己的 bilingual URL
+const pathByLang = {
+  zh: `/zh/posts/${slug}/bilingual/`,
+  en: `/en/posts/${slug}/bilingual/`,
+};
+---
+
+<Base
+  lang={lang}
+  title={`${main.data.title} — ${t(lang, 'post.bilingual')}`}
+  description={main.data.description}
+  pathByLang={pathByLang}
+  ogImage={`/og/posts/${main.id}.png`}
+>
+  <div class="container-wide">
+    <p style="margin-top: 1.5rem;">
+      <a href={`/${lang}/posts/${slug}/`}>← {main.data.title}</a>
+    </p>
+    <div class="bilingual-grid">
+      <article class="prose">
+        <span class="lang-label">繁體中文</span>
+        <h1>{zhPost.data.title}</h1>
+        <ZhContent />
+      </article>
+      <article class="prose">
+        <span class="lang-label">English</span>
+        <h1>{enPost.data.title}</h1>
+        <EnContent />
+      </article>
+    </div>
+  </div>
+</Base>
