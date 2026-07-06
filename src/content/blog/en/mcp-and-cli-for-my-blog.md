@@ -1,6 +1,6 @@
 ---
 title: "I Gave My Blog Both an MCP Server and a CLI, Then Measured the Tokens"
-description: "The 'MCP is dead, long live the CLI' takes are everywhere. Instead of picking a side, I built both paths for this blog and measured the same task over each. The conclusion is more boring than the takes — but it has numbers."
+description: "'MCP is dead, CLIs are cheaper' takes are everywhere. Why not both? I built both paths for this blog, mostly for fun, and measured the same task over each. The conclusion is more boring than the takes — but it has numbers."
 pubDate: 2026-07-06
 tags: [ai-agents, mcp, claude-code]
 discussionTerm: mcp-and-cli-for-my-blog
@@ -8,7 +8,7 @@ discussionTerm: mcp-and-cli-for-my-blog
 
 There's a running debate in the agent world: **MCP servers are too expensive; agents should just use CLIs**. The evidence looks damning — someone measured an enterprise API's MCP integration burning ~145,000 tokens on a task that a CLI pipeline finished in just over 4,000, a 35x gap. Another evaluation ran the same model through GitHub tasks and found the MCP path cost 6x more and took 5x longer.
 
-This blog happens to be an ideal test bench: static content, read-only, bilingual pairs. So instead of picking a side on X, I **built both paths** and measured them.
+My reaction was the meme kid shrugging: why not both? This blog happens to be an ideal test bench — static content, read-only, bilingual pairs — so I **built both paths**, mostly for fun, and measured them.
 
 ## The Result, Up Front
 
@@ -42,7 +42,7 @@ The response carries an `x-markdown-tokens` header so an agent can check the cos
 
 ## So Why Build the MCP Server At All?
 
-Because the two paths serve different scenarios — something I only fully appreciated after building both:
+"Both" isn't stubbornness — the two paths genuinely serve different scenarios, which I only fully appreciated after building them:
 
 - **CLI is the inner loop**: your agent, your machine, you can install things. Cheaper tokens, composable with pipes. Correct choice, no argument.
 - **MCP is the outer loop**: a **reader's** agent runs on the reader's machine, and you can't ask strangers to `npm install` anything first. One `claude mcp add` and the protocol handles discovery and invocation — something a CLI structurally cannot do safely over the internet.
@@ -67,4 +67,4 @@ Both paths read the same `search-index.json` generated at build time. The MCP se
 3. **You don't need to publish to npm** — add a `bin` field to `package.json` and `npx github:user/repo` just works
 4. **Measure your own numbers** — bytes are one `curl | wc -c` away, and they're more honest than quoting someone else's benchmark. Every number in this post was measured that way; token estimates assume roughly 4 bytes per token
 
-The takes say "MCP is dead." My data says: MCP isn't dead — it's just been shoved into scenarios it was never good at. Your blog probably has both scenarios.
+The takes say "MCP is dead." My data says: MCP isn't dead — it just keeps getting shoved into scenarios it was never good at. A blog happens to have both scenarios. So: both. Picking is for kids.

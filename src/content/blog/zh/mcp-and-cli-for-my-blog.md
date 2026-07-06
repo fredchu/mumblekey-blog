@@ -1,6 +1,6 @@
 ---
 title: 我幫部落格同時做了 MCP 和 CLI，然後量了 token
-description: 「MCP 已死，CLI 當立」的戰文滿天飛。與其選邊站，我把兩個都做出來，用同一個任務實測流量。結論比戰文無聊，但有數字。
+description: 「MCP 已死 CLI 省 token」吵翻天。不是啊，小孩子才做選擇，大人我全都要——部落格兩個都做，玩玩看實測。結論比戰文無聊，但有數字。
 pubDate: 2026-07-06
 tags: [ai-agents, mcp, claude-code]
 discussionTerm: mcp-and-cli-for-my-blog
@@ -8,7 +8,7 @@ discussionTerm: mcp-and-cli-for-my-blog
 
 最近 agent 圈有一場辯論：**MCP server 太貴了，agent 用 CLI 就好**。證據看起來很嚇人——有人量到某企業 API 的 MCP 服務一個任務燒掉 14.5 萬 tokens，換成 CLI 管線只要 4 千出頭，35 倍差距；另一份評測讓同一個模型跑 GitHub 任務，MCP 路徑成本 6 倍、耗時 5 倍。
 
-我這個部落格剛好是理想的實驗場：內容是靜態的、唯讀的、雙語成對的。所以與其在 X 上選邊站，我把**兩條路都做出來**，然後量給你看。
+看完我的反應是：不是啊，小孩子才做選擇，大人我全都要不就好了嗎？剛好這個部落格是理想的實驗場——內容靜態、唯讀、雙語成對——乾脆**兩條路都做出來**，玩玩看順便量一量。
 
 ## 先講結論
 
@@ -42,7 +42,7 @@ curl -H "Accept: text/markdown" \
 
 ## 那為什麼還要做 MCP？
 
-因為兩條路服務的場景不同，這是我做完才真正體會的：
+全都要不是賭氣，是兩條路服務的場景真的不同——這點做完才真正體會：
 
 - **CLI 是 inner loop**：你自己的 agent、你自己的機器、你裝得了東西。省 token、可以用 pipe 組合，怎麼看都是對的。
 - **MCP 是 outer loop**：**讀者**的 agent 在讀者的機器上，你不能要求人家先 `npm install` 什麼。一行 `claude mcp add` 接上，協定處理好發現與呼叫，這是 CLI 結構上做不到的。
@@ -67,4 +67,4 @@ npx github:fredchu/mumblekey-blog get subtitle-pipeline-3h-to-30min
 3. **CLI 不用發 npm**——`package.json` 加個 `bin`，`npx github:user/repo` 直接跑
 4. **量測自己的數字**——bytes 用 `curl | wc -c` 就量得到，比轉述別人的 benchmark 誠實。本文所有數字都是這樣來的，token 換算按每 4 bytes 約 1 token 粗估
 
-戰文說「MCP 已死」。我的數據說：MCP 沒死，它只是不該被塞進它不擅長的場景——而你的部落格，可能兩個場景都有。
+戰文說「MCP 已死」。我的數據說：MCP 沒死，它只是常被塞進不擅長的場景。部落格這種東西剛好兩個場景都有——那就都要，小孩子才做選擇。
