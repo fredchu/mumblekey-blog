@@ -1,0 +1,17 @@
+---
+title: "Subtitle Pipeline Visualized: One Line's Six-Stage Journey"
+description: "Walk through an automated subtitle production line: watch a real subtitle line evolve from raw ASR homophone errors into timed, quality-gated output."
+pubDate: 2026-07-06
+tags: [asr, automation, dataviz]
+sourceUrl: https://github.com/fredchu/mumblekey-blog/blob/main/src/components/demos/SubtitlePipeline.astro
+discussionTerm: demo-subtitle-pipeline-flow
+---
+
+import SubtitlePipeline from '../../../components/demos/SubtitlePipeline.astro';
+
+Hit "Play all stages" or click any stage to watch a real subtitle line travel through six stages.
+The ASR hears 美光 (Micron) as the homophone 沒光 and 密西根 (Michigan) as 密西跟 — errors like these get fixed at the LLM correction stage using on-screen OCR terms plus a learned term table, then the line is split to length and passes a quality gate before output.
+
+<SubtitlePipeline lang="en" />
+
+This demo is plain vanilla JS — no frontend framework. Full methodology in the post: [From 3 Hours to 30 Minutes: My Automated Chinese Subtitle Pipeline](/en/posts/subtitle-pipeline-3h-to-30min/).

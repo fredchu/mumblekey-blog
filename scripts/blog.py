@@ -273,6 +273,54 @@ def cmd_publish(args) -> int:
     return 0
 
 
+def cmd_unpublish(args) -> int:
+    if not valid_slug(args.slug):
+        err(f"invalid slug: {args.slug}")
+        return 1
+    collection = "demos" if args.demo else "blog"
+    paths = [find_post_path(args.root, collection, lang, args.slug) for lang in ("zh", "en")]
+    existing = [path for path in paths if path]
+    if not existing:
+        err(f"no files found for slug: {args.slug}")
+        return 1
+    for path in existing:
+        text = path.read_text(encoding="utf-8")
+        data = parse_frontmatter(text)
+        if data.get("draft", False):
+            print(f"already draft: {rel(args.root, path)}")
+            continue
+        path.write_text(write_frontmatter(text, {"draft": True}), encoding="utf-8")
+        print(f"unpublished: {rel(args.root, path)}")
+    print("reminder: rebuild + deploy to remove from the live site (git push or `blog deploy`)")
+    return 0
+
+
+def cmd_delete(args) -> int:
+    if not valid_slug(args.slug):
+        err(f"invalid slug: {args.slug}")
+        return 1
+    collection = "demos" if args.demo else "blog"
+    paths = [(lang, find_post_path(args.root, collection, lang, args.slug)) for lang in ("zh", "en")]
+    existing = [(lang, path) for lang, path in paths if path]
+    if not existing:
+        err(f"no files found for slug: {args.slug}")
+        return 1
+    drafts_dir = args.root / "drafts"
+    moves = [(path, drafts_dir / f"{args.slug}.{lang}{path.suffix}") for lang, path in existing]
+    if not args.yes:
+        for src, dest in moves:
+            print(f"would move: {rel(args.root, src)} -> {rel(args.root, dest)}")
+        print("soft delete only (moves to gitignored drafts/); re-run with --yes to execute")
+        return 0
+    drafts_dir.mkdir(exist_ok=True)
+    for src, dest in moves:
+        src.rename(dest)
+        print(f"moved: {rel(args.root, src)} -> {rel(args.root, dest)}")
+    print("reminder: rebuild + deploy to remove from the live site;")
+    print("if this was ever pushed, the content still exists in the public repo's git history")
+    return 0
+
+
 def run_process(command: list[str]) -> int:
     return subprocess.run(command).returncode
 
@@ -403,6 +451,17 @@ def build_parser() -> argparse.ArgumentParser:
     publish = sub.add_parser("publish")
     publish.add_argument("slug")
     publish.set_defaults(func=cmd_publish)
+
+    unpublish = sub.add_parser("unpublish")
+    unpublish.add_argument("slug")
+    unpublish.add_argument("--demo", action="store_true")
+    unpublish.set_defaults(func=cmd_unpublish)
+
+    delete = sub.add_parser("delete")
+    delete.add_argument("slug")
+    delete.add_argument("--demo", action="store_true")
+    delete.add_argument("--yes", action="store_true")
+    delete.set_defaults(func=cmd_delete)
 
     preview = sub.add_parser("preview")
     preview.set_defaults(func=cmd_preview)

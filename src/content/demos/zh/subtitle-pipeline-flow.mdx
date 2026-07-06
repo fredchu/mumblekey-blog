@@ -1,0 +1,17 @@
+---
+title: 字幕 pipeline 流程視覺化：一條字幕的六段旅程
+description: 互動走一遍字幕自動化生產線：看一條真實字幕行從 ASR 同音字錯誤，一步步變成帶時間軸的成品。
+pubDate: 2026-07-06
+tags: [asr, automation, dataviz]
+sourceUrl: https://github.com/fredchu/mumblekey-blog/blob/main/src/components/demos/SubtitlePipeline.astro
+discussionTerm: demo-subtitle-pipeline-flow
+---
+
+import SubtitlePipeline from '../../../components/demos/SubtitlePipeline.astro';
+
+按「播放全程」或點任一階段，看一條真實字幕行怎麼走過六個階段：
+ASR 把「美光」聽成「沒光」、「密西根」聽成「密西跟」——這類同音字錯誤靠畫面術語（OCR）＋術語表在 LLM 校正階段修掉，最後切成合規長度、過品質 gate 才輸出。
+
+<SubtitlePipeline lang="zh" />
+
+這個 demo 是純 vanilla JS，沒有前端框架。完整方法論在文章：[從 3 小時到 30 分鐘：我的中文字幕自動化 pipeline](/zh/posts/subtitle-pipeline-3h-to-30min/)。

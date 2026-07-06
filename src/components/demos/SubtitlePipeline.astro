@@ -1,0 +1,241 @@
+---
+// 字幕 pipeline 流程視覺化：一條真實字幕行走過六個階段的蛻變
+interface Props {
+  lang: 'zh' | 'en';
+}
+
+const { lang } = Astro.props;
+
+const L = {
+  zh: {
+    play: '▶ 播放全程',
+    pause: '⏸ 暫停',
+    hint: '點任一階段看該步的輸入輸出',
+    stages: [
+      { key: 'download', name: '下載', desc: 'yt-dlp 抓影片與音軌' },
+      { key: 'ocr', name: '畫面術語', desc: '每 60 秒抽一幀，OCR 抽出畫面上的術語' },
+      { key: 'asr', name: 'ASR 辨識', desc: '本地模型把語音轉成文字（會有同音字錯誤）' },
+      { key: 'pre', name: '預處理', desc: '斷句清理、修復詞中逗號' },
+      { key: 'llm', name: 'LLM 校正', desc: '注入術語表＋畫面上下文，修正專有名詞' },
+      { key: 'post', name: '後處理', desc: '超長字幕切分、條數比例品質 gate' },
+    ],
+  },
+  en: {
+    play: '▶ Play all stages',
+    pause: '⏸ Pause',
+    hint: 'Click any stage to see its input/output',
+    stages: [
+      { key: 'download', name: 'Download', desc: 'yt-dlp fetches video and audio' },
+      { key: 'ocr', name: 'On-screen terms', desc: 'One frame per 60s, OCR extracts on-screen terminology' },
+      { key: 'asr', name: 'ASR', desc: 'Local model transcribes speech (homophone errors included)' },
+      { key: 'pre', name: 'Preprocess', desc: 'Segment cleanup, intra-word comma repair' },
+      { key: 'llm', name: 'LLM correction', desc: 'Term table + visual context injected, proper nouns fixed' },
+      { key: 'post', name: 'Postprocess', desc: 'Over-length splitting, count-ratio quality gate' },
+    ],
+  },
+}[lang];
+---
+
+<div class="demo-frame subtitle-pipeline" data-lang={lang}>
+  <div class="sp-stages">
+    {L.stages.map((stage, i) => (
+      <button class="sp-stage" data-idx={i}>
+        <span class="sp-dot">{i + 1}</span>
+        <span class="sp-name">{stage.name}</span>
+      </button>
+    ))}
+  </div>
+  <div class="sp-panel">
+    <p class="sp-desc" id="sp-desc"></p>
+    <div class="sp-card" id="sp-card"></div>
+  </div>
+  <div class="sp-controls">
+    <button class="icon-btn" id="sp-play">{L.play}</button>
+    <span class="sp-hint">{L.hint}</span>
+  </div>
+</div>
+
+<style>
+  .subtitle-pipeline .sp-stages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.9rem;
+  }
+  .subtitle-pipeline .sp-stage {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-soft);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: all 0.15s ease;
+  }
+  .subtitle-pipeline .sp-stage.active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--accent-soft);
+  }
+  .subtitle-pipeline .sp-stage.done .sp-dot {
+    background: var(--accent);
+    color: #fff;
+  }
+  .subtitle-pipeline .sp-dot {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+  }
+  .subtitle-pipeline .sp-desc {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin: 0 0 0.6rem;
+    min-height: 2.6em;
+  }
+  .subtitle-pipeline .sp-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    line-height: 1.9;
+    min-height: 7.5em;
+    white-space: pre-wrap;
+  }
+  .subtitle-pipeline .sp-card .bad {
+    color: #d64545;
+    text-decoration: underline wavy #d64545 1px;
+  }
+  .subtitle-pipeline .sp-card .fixed {
+    color: #2ea043;
+    font-weight: 600;
+  }
+  .subtitle-pipeline .sp-card .term {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 0 0.3em;
+  }
+  .subtitle-pipeline .sp-card .tc {
+    color: var(--text-soft);
+    font-size: 0.8rem;
+  }
+  .subtitle-pipeline .sp-controls {
+    margin-top: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .subtitle-pipeline .sp-hint {
+    color: var(--text-soft);
+    font-size: 0.82rem;
+  }
+</style>
+
+<script>
+  const frame = document.querySelector('.subtitle-pipeline') as HTMLElement | null;
+  if (frame) {
+    const lang = frame.dataset.lang === 'zh' ? 'zh' : 'en';
+
+    // 同一條字幕行在各階段的樣貌（真實 pipeline 的縮影）
+    const CARDS: Record<string, string[]> = {
+      zh: [
+        '🎬 austin-ep194.mkv\n🎧 austin-ep194.m4a\n（2 小時財經教學影片）',
+        'OCR 抽出畫面術語：\n<span class="term">美光</span> <span class="term">MU</span> <span class="term">MA30</span> <span class="term">密西根</span> <span class="term">Isaiah Research</span>',
+        'ASR 原始輸出（同音字錯誤照單全收）：\n「<span class="bad">沒光</span>的財報顯示<span class="bad">密西跟</span>廠的產能爬坡比預期快然後<span class="bad">MA三十</span>也站上了」',
+        '斷句＋修詞中逗號：\n「<span class="bad">沒光</span>的財報顯示，<span class="bad">密西跟</span>廠的產能爬坡比預期快，然後<span class="bad">MA三十</span>也站上了」',
+        '注入術語表＋畫面上下文後校正：\n「<span class="fixed">美光</span>的財報顯示，<span class="fixed">密西根</span>廠的產能爬坡比預期快，然後 <span class="fixed">MA30</span> 也站上了」',
+        '切成 ≤20 字的字幕塊＋品質 gate：\n<span class="tc">00:14:03,220 → 00:14:05,890</span>\n美光的財報顯示，密西根廠的\n<span class="tc">00:14:05,890 → 00:14:08,470</span>\n產能爬坡比預期快，MA30 也站上了\n\n<span class="fixed">✓ gate：條數比例 0.97（≥0.55 通過）</span>',
+      ],
+      en: [
+        '🎬 austin-ep194.mkv\n🎧 austin-ep194.m4a\n(2-hour finance teaching video)',
+        'OCR extracts on-screen terms:\n<span class="term">美光</span> <span class="term">MU</span> <span class="term">MA30</span> <span class="term">密西根</span> <span class="term">Isaiah Research</span>',
+        'Raw ASR output (homophone errors and all):\n"<span class="bad">沒光</span>的財報顯示<span class="bad">密西跟</span>廠的產能爬坡比預期快然後<span class="bad">MA三十</span>也站上了"\n(Micron → wrong homophone; Michigan → wrong homophone)',
+        'Segmentation + intra-word comma repair:\n"<span class="bad">沒光</span>的財報顯示，<span class="bad">密西跟</span>廠的產能爬坡比預期快，然後<span class="bad">MA三十</span>也站上了"',
+        'Corrected with term table + visual context:\n"<span class="fixed">美光</span>的財報顯示，<span class="fixed">密西根</span>廠的產能爬坡比預期快，然後 <span class="fixed">MA30</span> 也站上了"\n(Micron ✓ Michigan ✓ MA30 ✓)',
+        'Split into ≤20-char blocks + quality gate:\n<span class="tc">00:14:03,220 → 00:14:05,890</span>\n美光的財報顯示，密西根廠的\n<span class="tc">00:14:05,890 → 00:14:08,470</span>\n產能爬坡比預期快，MA30 也站上了\n\n<span class="fixed">✓ gate: count ratio 0.97 (≥0.55 pass)</span>',
+      ],
+    };
+
+    const stageDescs = {
+      zh: [
+        'yt-dlp 抓影片與音軌，直接寫進工作目錄。',
+        '每 60 秒抽一幀做 OCR——股票代號、指標縮寫這類專有名詞，畫面比語音可靠。',
+        '本地 ASR 模型轉文字。財經專有名詞的同音字錯誤是最大痛點。',
+        '機械規則先吃便宜錯誤：斷句、修復 ASR 插在詞中間的逗號。',
+        '把術語表與畫面術語注入 prompt，LLM 分段校正——難的錯誤在這裡修。',
+        '超長字幕按詞邊界切分，最後過品質 gate：條數掉太多就整段重派。',
+      ],
+      en: [
+        'yt-dlp fetches the video and audio straight into the working directory.',
+        'One frame per 60s goes through OCR — tickers and indicator acronyms are more reliable on screen than in audio.',
+        'A local ASR model transcribes. Homophone errors on finance terms are the biggest pain point.',
+        'Mechanical rules eat the cheap errors first: segmentation, repairing commas ASR inserts mid-word.',
+        'The term table and on-screen terms are injected into the prompt; an LLM corrects each segment — hard errors get fixed here.',
+        'Over-length blocks split at word boundaries, then a quality gate: if the count ratio drops too far, the segment is re-dispatched.',
+      ],
+    }[lang];
+
+    const cards = CARDS[lang];
+    const stages = frame.querySelectorAll<HTMLButtonElement>('.sp-stage');
+    const descEl = frame.querySelector('#sp-desc')!;
+    const cardEl = frame.querySelector('#sp-card')!;
+    const playBtn = frame.querySelector<HTMLButtonElement>('#sp-play')!;
+    const playLabel = playBtn.textContent;
+    const pauseLabel = lang === 'zh' ? '⏸ 暫停' : '⏸ Pause';
+
+    let current = 0;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    function show(idx: number) {
+      current = idx;
+      stages.forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+        btn.classList.toggle('done', i < idx);
+      });
+      descEl.textContent = stageDescs[idx];
+      cardEl.innerHTML = cards[idx];
+    }
+
+    function stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+      playBtn.textContent = playLabel;
+    }
+
+    stages.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        stop();
+        show(i);
+      });
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (timer) {
+        stop();
+        return;
+      }
+      playBtn.textContent = pauseLabel;
+      show(0);
+      timer = setInterval(() => {
+        if (current >= cards.length - 1) {
+          stop();
+          return;
+        }
+        show(current + 1);
+      }, 2600);
+    });
+
+    show(0);
+  }
+</script>

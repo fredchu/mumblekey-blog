@@ -27,3 +27,4 @@ pnpm-debug.log*
 .codex-dispatch/
 .vscode/
 CLAUDE.md
+drafts/

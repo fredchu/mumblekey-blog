@@ -112,6 +112,41 @@ def test_search_matches_case_insensitive_content(tmp_path, capsys):
     assert "src/content/blog/zh/find-me.md:9: Alpha KEYword omega" in out
 
 
+def test_unpublish_flips_draft_and_skips_drafts(tmp_path, capsys):
+    zh = write_post(tmp_path, "zh", "take-down", "下架", False)
+    en = write_post(tmp_path, "en", "take-down", "Down", False)
+
+    assert blog.main(["--root", str(tmp_path), "unpublish", "take-down"]) == 0
+    out = capsys.readouterr().out
+    assert "unpublished: src/content/blog/zh/take-down.md" in out
+    assert blog.parse_frontmatter(zh.read_text(encoding="utf-8"))["draft"] is True
+    assert blog.parse_frontmatter(en.read_text(encoding="utf-8"))["draft"] is True
+
+    assert blog.main(["--root", str(tmp_path), "unpublish", "take-down"]) == 0
+    assert "already draft: src/content/blog/zh/take-down.md" in capsys.readouterr().out
+
+    assert blog.main(["--root", str(tmp_path), "unpublish", "no-such-post"]) == 1
+
+
+def test_delete_requires_yes_then_moves_to_drafts(tmp_path, capsys):
+    zh = write_post(tmp_path, "zh", "gone-post", "刪", False)
+    en = write_post(tmp_path, "en", "gone-post", "Gone", False)
+
+    assert blog.main(["--root", str(tmp_path), "delete", "gone-post"]) == 0
+    out = capsys.readouterr().out
+    assert "would move" in out
+    assert zh.exists() and en.exists()
+
+    assert blog.main(["--root", str(tmp_path), "delete", "gone-post", "--yes"]) == 0
+    out = capsys.readouterr().out
+    assert "moved: src/content/blog/zh/gone-post.md -> drafts/gone-post.zh.md" in out
+    assert not zh.exists() and not en.exists()
+    assert (tmp_path / "drafts" / "gone-post.zh.md").exists()
+    assert (tmp_path / "drafts" / "gone-post.en.md").exists()
+
+    assert blog.main(["--root", str(tmp_path), "delete", "gone-post", "--yes"]) == 1
+
+
 def test_frontmatter_roundtrip_changes_only_requested_field():
     text = """---
 title: Demo
