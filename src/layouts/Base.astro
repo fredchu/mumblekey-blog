@@ -1,0 +1,84 @@
+---
+import '../styles/global.css';
+import { SITE_TITLE, SITE_DESC } from '../consts';
+import type { Lang } from '../lib/i18n';
+import { HTML_LANG, OG_LOCALE, t, otherLang } from '../lib/i18n';
+import { absoluteUrl, hreflangLinks } from '../lib/seo';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  lang: Lang;
+  title?: string;
+  description?: string;
+  /** 本頁在各語言的路徑（含自己），用於 hreflang 與語言切換 */
+  pathByLang: Partial<Record<Lang, string>>;
+  ogType?: 'website' | 'article';
+  jsonLd?: object[];
+  /** 本頁的純 Markdown 版本路徑（agent 用） */
+  mdPath?: string;
+}
+
+const {
+  lang,
+  title,
+  description = SITE_DESC[lang],
+  pathByLang,
+  ogType = 'website',
+  jsonLd = [],
+  mdPath,
+} = Astro.props;
+
+const pageTitle = title ? `${title} — ${SITE_TITLE[lang]}` : SITE_TITLE[lang];
+const canonical = absoluteUrl(pathByLang[lang] ?? Astro.url.pathname);
+const alternates = hreflangLinks(pathByLang);
+const switchPath = pathByLang[otherLang(lang)];
+---
+
+<!doctype html>
+<html lang={HTML_LANG[lang]} data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Fred Chu" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+    {mdPath && <link rel="alternate" type="text/markdown" href={absoluteUrl(mdPath)} />}
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={SITE_TITLE[lang]}
+      href={absoluteUrl(`/${lang}/rss.xml`)}
+    />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE_TITLE[lang]} />
+    <meta property="og:locale" content={OG_LOCALE[lang]} />
+    <meta name="twitter:card" content="summary" />
+    {jsonLd.map((ld) => (
+      <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+    ))}
+    <script is:inline>
+      (() => {
+        const saved = localStorage.getItem('theme');
+        const preferred =
+          saved ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = preferred;
+      })();
+    </script>
+  </head>
+  <body>
+    <Header lang={lang} switchPath={switchPath} switchLabel={t(lang, 'a11y.langSwitch')} />
+    <main>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

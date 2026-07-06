@@ -1,0 +1,27 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { Lang } from '../lib/i18n';
+import { slugFromId } from '../lib/i18n';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+  post: CollectionEntry<'blog'> | CollectionEntry<'demos'>;
+  lang: Lang;
+  base?: 'posts' | 'demos';
+}
+
+const { post, lang, base = 'posts' } = Astro.props;
+const slug = slugFromId(post.id);
+const href = `/${lang}/${base}/${slug}/`;
+---
+
+<li class="post-card">
+  <h3><a href={href}>{post.data.title}</a></h3>
+  <p>{post.data.description}</p>
+  <div class="post-meta">
+    <FormattedDate date={post.data.pubDate} lang={lang} />
+    {post.data.tags.map((tag) => (
+      <a class="tag" href={`/${lang}/tags/${tag}/`}>{tag}</a>
+    ))}
+  </div>
+</li>

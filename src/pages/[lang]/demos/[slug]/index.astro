@@ -1,0 +1,65 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../../layouts/Base.astro';
+import FormattedDate from '../../../../components/FormattedDate.astro';
+import Giscus from '../../../../components/Giscus.astro';
+import { langFromId, slugFromId, t, otherLang, type Lang } from '../../../../lib/i18n';
+import { publishedEntries, pairPaths } from '../../../../lib/content';
+import { blogPostingLd, absoluteUrl } from '../../../../lib/seo';
+
+export async function getStaticPaths() {
+  const demos = await publishedEntries('demos');
+  return demos.map((demo) => ({
+    params: { lang: langFromId(demo.id), slug: slugFromId(demo.id) },
+    props: { demo },
+  }));
+}
+
+const { demo } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const slug = slugFromId(demo.id);
+const { Content } = await render(demo);
+
+const pathByLang = await pairPaths('demos', slug, 'demos');
+const term = demo.data.discussionTerm ?? `demo-${slug}`;
+const jsonLd = blogPostingLd({
+  title: demo.data.title,
+  description: demo.data.description,
+  url: absoluteUrl(`/${lang}/demos/${slug}/`),
+  lang,
+  pubDate: demo.data.pubDate,
+  updatedDate: demo.data.updatedDate,
+  tags: demo.data.tags,
+});
+---
+
+<Base
+  lang={lang}
+  title={demo.data.title}
+  description={demo.data.description}
+  pathByLang={pathByLang}
+  ogType="article"
+  jsonLd={[jsonLd]}
+>
+  <div class="container-wide">
+    <article class="prose">
+      <header class="article-header">
+        <h1>{demo.data.title}</h1>
+        <div class="post-meta">
+          <FormattedDate date={demo.data.pubDate} lang={lang} />
+          {demo.data.tags.map((tag) => (
+            <a class="tag" href={`/${lang}/tags/${tag}/`}>{tag}</a>
+          ))}
+          {demo.data.sourceUrl && <a href={demo.data.sourceUrl}>{t(lang, 'demos.source')}</a>}
+        </div>
+      </header>
+      <Content />
+      <footer class="article-footer">
+        {pathByLang[otherLang(lang)] && (
+          <a href={pathByLang[otherLang(lang)]}>{t(lang, 'post.pair')}</a>
+        )}
+      </footer>
+      <Giscus lang={lang} term={term} />
+    </article>
+  </div>
+</Base>

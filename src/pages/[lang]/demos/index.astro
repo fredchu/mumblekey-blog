@@ -1,0 +1,23 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { LOCALES, t, type Lang } from '../../../lib/i18n';
+import { publishedEntries, indexPaths } from '../../../lib/content';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const demos = await publishedEntries('demos', lang);
+const pathByLang = indexPaths((l) => `/${l}/demos/`);
+---
+
+<Base lang={lang} title={t(lang, 'nav.demos')} pathByLang={pathByLang}>
+  <div class="container">
+    <h1>{t(lang, 'nav.demos')}</h1>
+    <ul class="post-list">
+      {demos.map((demo) => <PostCard post={demo} lang={lang} base="demos" />)}
+    </ul>
+  </div>
+</Base>

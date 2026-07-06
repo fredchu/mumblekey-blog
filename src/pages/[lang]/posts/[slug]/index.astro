@@ -1,0 +1,72 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../../layouts/Base.astro';
+import FormattedDate from '../../../../components/FormattedDate.astro';
+import Giscus from '../../../../components/Giscus.astro';
+import { langFromId, slugFromId, t, otherLang, type Lang } from '../../../../lib/i18n';
+import { publishedEntries, pairPaths } from '../../../../lib/content';
+import { blogPostingLd, absoluteUrl } from '../../../../lib/seo';
+
+export async function getStaticPaths() {
+  const posts = await publishedEntries('blog');
+  return posts.map((post) => ({
+    params: { lang: langFromId(post.id), slug: slugFromId(post.id) },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const slug = slugFromId(post.id);
+const { Content } = await render(post);
+
+const pathByLang = await pairPaths('blog', slug, 'posts');
+const mdPath = `/${lang}/posts/${slug}.md`;
+const term = post.data.discussionTerm ?? slug;
+const showDisclaimer = post.data.tags.includes('trading');
+const jsonLd = blogPostingLd({
+  title: post.data.title,
+  description: post.data.description,
+  url: absoluteUrl(`/${lang}/posts/${slug}/`),
+  lang,
+  pubDate: post.data.pubDate,
+  updatedDate: post.data.updatedDate,
+  tags: post.data.tags,
+});
+---
+
+<Base
+  lang={lang}
+  title={post.data.title}
+  description={post.data.description}
+  pathByLang={pathByLang}
+  ogType="article"
+  jsonLd={[jsonLd]}
+  mdPath={mdPath}
+>
+  <div class="container">
+    <article class="prose">
+      <header class="article-header">
+        <h1>{post.data.title}</h1>
+        <div class="post-meta">
+          <span>{t(lang, 'post.published')} <FormattedDate date={post.data.pubDate} lang={lang} /></span>
+          {post.data.updatedDate && (
+            <span>{t(lang, 'post.updated')} <FormattedDate date={post.data.updatedDate} lang={lang} /></span>
+          )}
+          {post.data.tags.map((tag) => (
+            <a class="tag" href={`/${lang}/tags/${tag}/`}>{tag}</a>
+          ))}
+        </div>
+      </header>
+      <Content />
+      {showDisclaimer && <div class="disclaimer">{t(lang, 'disclaimer.trading')}</div>}
+      <footer class="article-footer">
+        {pathByLang[otherLang(lang)] && (
+          <a href={pathByLang[otherLang(lang)]}>{t(lang, 'post.pair')}</a>
+        )}
+        <a href={mdPath}>{t(lang, 'post.markdown')}</a>
+      </footer>
+      <Giscus lang={lang} term={term} />
+    </article>
+  </div>
+</Base>

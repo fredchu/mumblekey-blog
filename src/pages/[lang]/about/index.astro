@@ -1,0 +1,74 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LOCALES, t, type Lang } from '../../../lib/i18n';
+import { indexPaths } from '../../../lib/content';
+import { AUTHOR, ORG, REPO_URL } from '../../../consts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const pathByLang = indexPaths((l) => `/${l}/about/`);
+---
+
+<Base lang={lang} title={t(lang, 'nav.about')} pathByLang={pathByLang}>
+  <div class="container">
+    <article class="prose">
+      {lang === 'zh' ? (
+        <>
+          <h1>關於</h1>
+          <p>
+            我是 <strong>Fred Chu</strong>，台灣桃園的獨立開發者，做 AI 開發與金融分析的交叉領域。
+            我用 AI agent 把一人公司的工作結構整個重組：字幕與財報翻譯的商業產出、
+            日常生產力自動化、投資交易的研究與執行工具，全部跑在自己設計的 agent 系統上。
+          </p>
+          <p>
+            <strong><a href={ORG.url}>MumbleKey</a></strong> 是我正在開發的 iPhone／visionOS
+            裝置端語音辨識鍵盤。這個 blog 記錄我在 AI agent 工程與投資交易兩條線上的實作筆記——
+            所有內容都來自真實跑在生產環境的系統，不是理論。
+          </p>
+          <h2>這裡寫什麼</h2>
+          <ul>
+            <li><strong>AI agent 工程</strong>：Claude Code 工作流、多機 agent 架構、自動化 pipeline</li>
+            <li><strong>投資交易</strong>：週期框架、倉位管理、交易基礎設施（券商 API、監控系統）</li>
+            <li><strong>互動展示</strong>：資料視覺化與 canvas demo，程式碼全部開源可複製</li>
+          </ul>
+          <h2>找到我</h2>
+          <p>
+            GitHub：<a href={AUTHOR.github}>@fredchu</a>／本站原始碼：
+            <a href={REPO_URL}>mumblekey-blog</a>
+          </p>
+        </>
+      ) : (
+        <>
+          <h1>About</h1>
+          <p>
+            I'm <strong>Fred Chu</strong>, an independent developer in Taoyuan, Taiwan, working at
+            the intersection of AI development and financial analysis. I restructured my entire
+            one-person company around AI agents: commercial subtitle and earnings-call translation
+            pipelines, daily productivity automation, and trading research infrastructure — all
+            running on agent systems I designed and operate.
+          </p>
+          <p>
+            <strong><a href={ORG.url}>MumbleKey</a></strong> is the on-device speech-recognition
+            keyboard for iPhone and visionOS I'm building. This blog documents working notes from
+            both tracks — AI agent engineering and trading. Everything here comes from systems
+            running in production, not theory.
+          </p>
+          <h2>What I write about</h2>
+          <ul>
+            <li><strong>AI agent engineering</strong>: Claude Code workflows, multi-machine agent architecture, automation pipelines</li>
+            <li><strong>Trading</strong>: cycle-based frameworks, position management, trading infrastructure (broker APIs, monitoring)</li>
+            <li><strong>Interactive demos</strong>: data visualization and canvas experiments, all open source</li>
+          </ul>
+          <h2>Find me</h2>
+          <p>
+            GitHub: <a href={AUTHOR.github}>@fredchu</a> / This site's source:
+            <a href={REPO_URL}>mumblekey-blog</a>
+          </p>
+        </>
+      )}
+    </article>
+  </div>
+</Base>

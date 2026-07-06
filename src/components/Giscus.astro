@@ -1,0 +1,36 @@
+---
+import type { Lang } from '../lib/i18n';
+import { GISCUS } from '../consts';
+
+interface Props {
+  lang: Lang;
+  /** 語言無關的留言 key；成對文章傳同一值即共用同一串 */
+  term: string;
+}
+
+const { lang, term } = Astro.props;
+const configured = GISCUS.repoId !== '' && GISCUS.categoryId !== '';
+---
+
+{configured && (
+  <section class="comments" data-giscus-term={term}>
+    <script
+      is:inline
+      src="https://giscus.app/client.js"
+      data-repo={GISCUS.repo}
+      data-repo-id={GISCUS.repoId}
+      data-category={GISCUS.category}
+      data-category-id={GISCUS.categoryId}
+      data-mapping="specific"
+      data-term={term}
+      data-strict="1"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="preferred_color_scheme"
+      data-lang={lang === 'zh' ? 'zh-TW' : 'en'}
+      data-loading="lazy"
+      crossorigin="anonymous"
+      async></script>
+  </section>
+)}

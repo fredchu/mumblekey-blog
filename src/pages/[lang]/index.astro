@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostCard from '../../components/PostCard.astro';
+import { LOCALES, t, type Lang } from '../../lib/i18n';
+import { publishedEntries, indexPaths } from '../../lib/content';
+import { websiteLd } from '../../lib/seo';
+import { SITE_DESC } from '../../consts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const posts = (await publishedEntries('blog', lang)).slice(0, 6);
+const demos = (await publishedEntries('demos', lang)).slice(0, 3);
+const pathByLang = indexPaths((l) => `/${l}/`);
+---
+
+<Base
+  lang={lang}
+  pathByLang={pathByLang}
+  jsonLd={[websiteLd(lang, SITE_DESC[lang])]}
+>
+  <div class="container">
+    <section>
+      <h2>{t(lang, 'home.latest')}</h2>
+      <ul class="post-list">
+        {posts.map((post) => <PostCard post={post} lang={lang} />)}
+      </ul>
+      <p><a href={`/${lang}/posts/`}>{t(lang, 'home.viewAll')} →</a></p>
+    </section>
+    {demos.length > 0 && (
+      <section>
+        <h2>{t(lang, 'home.demos')}</h2>
+        <ul class="post-list">
+          {demos.map((demo) => <PostCard post={demo} lang={lang} base="demos" />)}
+        </ul>
+        <p><a href={`/${lang}/demos/`}>{t(lang, 'home.viewAllDemos')} →</a></p>
+      </section>
+    )}
+  </div>
+</Base>
