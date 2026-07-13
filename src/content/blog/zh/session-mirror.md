@@ -49,7 +49,7 @@ https://github.com/fredchu/session-mirror
 
 ## 致謝
 
-這個 skill 的六階段概念來自那位推特上的原作者，我真的找過但找不到人，題頭那三句話是全 repo 唯一逐字引用。如果你是原作者，或知道是誰，請開個 issue，我很樂意用你希望的方式補上署名。謝謝你寫下它。
+這個 skill 的六階段概念來自 [Machina（@EXM7777）](https://x.com/EXM7777)2026-07-07 發在 X 的[〈This prompt will change your life〉](https://x.com/EXM7777/status/2074501620235465089)。文章剛發的時候我還找不到人，發完沒多久就找到原推了，署名馬上補上。題頭那三句話是全 repo 唯一逐字引用。謝謝你寫下它。
 
 裝好之後對你的 agent 說「照鏡子」就會開跑。
 

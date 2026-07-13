@@ -49,7 +49,7 @@ Privacy, stated bluntly: the scripts are local-only, no network, guaranteed. The
 
 ## Attribution
 
-The six-phase concept comes from that unknown Twitter author. I genuinely tried to find them and failed. The three sentences at the top are the only verbatim quote in the repo. If you wrote it, or know who did, please open an issue. I'd love to credit you properly, however you prefer. Thank you for writing it.
+The six-phase concept comes from ["This prompt will change your life"](https://x.com/EXM7777/status/2074501620235465089) by [Machina (@EXM7777)](https://x.com/EXM7777), published on X on 2026-07-07. When this post first went up I couldn't find the source; it turned up shortly after publishing, and the credit went in immediately. The three sentences at the top are the only verbatim quote in the repo. Thank you for writing it.
 
 Once installed, tell your agent "mirror me" and it runs.
 
