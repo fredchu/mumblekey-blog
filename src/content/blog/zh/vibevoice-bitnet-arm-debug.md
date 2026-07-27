@@ -96,3 +96,11 @@ batch size 8 → 正常
 issue 發出去了，這次不用擔心比文章慢：[microsoft/VibeASR.cpp#2](https://github.com/microsoft/VibeASR.cpp/issues/2)
 
 至於「第一個編譯的人」這個頭銜，保鮮期一天。開源世界跑得很快，這大概是被打臉的方式裡最好的一種。
+
+## 後記二（又隔天）
+
+不甘心，讓 agent 在背景把第四關也打完了。root cause 打臉了我自己在 issue 裡的猜測：不在卷積管線，在 LM kernel。NEON 路徑用 64 元素的區塊佈局去解三值權重，但檔案格式是 128 元素一組，等於每一層 transformer 都在用「洗過牌的權重矩陣」算矩陣乘法。這也解釋了為什麼輸出是流利的胡言亂語而非雜訊：模型本身是好的，只是它的腦被均勻打亂了。
+
+修好之後，同一段 30 秒中文演講在 M1 Max 上轉出了正確的內容，RTF 0.50。修法和 kernel 對拍測試都在 [PR #3](https://github.com/microsoft/VibeASR.cpp/pull/3)。
+
+所以最終回收：paper 宣稱的「ARM 即時聽寫」，現在真的成立了，四個 bug 之後。

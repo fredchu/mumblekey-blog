@@ -96,3 +96,11 @@ I pulled the new version and retested on the same machine. Compiles clean, runs 
 The issue is filed, and this time it beat the blog post: [microsoft/VibeASR.cpp#2](https://github.com/microsoft/VibeASR.cpp/issues/2)
 
 As for my "first person to compile it" title: shelf life, one day. Open source moves fast, and honestly, this is the best possible way to be proven wrong.
+
+## Postscript two (the day after that)
+
+Couldn't let it go, so I had an agent finish round four in the background. The root cause proved my own guess in the issue wrong: not the convolution pipeline, but the LM kernels. The NEON path decoded the ternary weights with a 64-element block layout while the file format packs 128 elements per unit, so every transformer layer was doing matmuls against a shuffled weight matrix. Which also explains why the output was fluent gibberish rather than noise: the model was fine, its brain was just uniformly scrambled.
+
+With the fix, the same 30-second Mandarin clip transcribes correctly on the M1 Max at RTF 0.50. Fix and kernel diff tests are in [PR #3](https://github.com/microsoft/VibeASR.cpp/pull/3).
+
+Final tally: the paper's "real-time on ARM" claim is now actually true, four bugs later.
